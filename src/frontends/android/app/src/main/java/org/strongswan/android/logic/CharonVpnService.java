@@ -42,6 +42,7 @@ import android.system.OsConstants;
 import android.util.Log;
 
 import org.strongswan.android.R;
+import org.strongswan.android.data.RestrictionsVpnProfileManager;
 import org.strongswan.android.data.VpnProfile;
 import org.strongswan.android.data.VpnProfile.SelectedAppsHandling;
 import org.strongswan.android.data.VpnProfileDataSource;
@@ -82,7 +83,7 @@ import androidx.preference.PreferenceManager;
 public class CharonVpnService extends VpnService implements Runnable, VpnStateService.VpnStateListener
 {
 	private static final String TAG = CharonVpnService.class.getSimpleName();
-	private static final String VPN_SERVICE_ACTION = "android.net.VpnService";
+	public static final String VPN_SERVICE_ACTION = "android.net.VpnService";
 	public static final String DISCONNECT_ACTION = "org.strongswan.android.CharonVpnService.DISCONNECT";
 	private static final String NOTIFICATION_CHANNEL = "org.strongswan.android.CharonVpnService.VPN_STATE_NOTIFICATION";
 	public static final String LOG_FILE = "charon.log";
@@ -150,6 +151,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 
 			if (VPN_SERVICE_ACTION.equals(intent.getAction()))
 			{	/* triggered when Always-on VPN is activated */
+				Log.i(TAG, "VPN_SERVICE_ACTION");
 				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 				String uuid = pref.getString(Constants.PREF_DEFAULT_VPN_PROFILE, null);
 				if (uuid == null || uuid.equals(Constants.PREF_DEFAULT_VPN_PROFILE_MRU))
@@ -160,6 +162,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			}
 			else if (!DISCONNECT_ACTION.equals(intent.getAction()))
 			{
+				Log.i(TAG, "DISCONNECT_ACTION");
 				Bundle bundle = intent.getExtras();
 				if (bundle != null)
 				{
@@ -197,6 +200,9 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 
 		mDataSource = new VpnProfileDataSource(this);
 		mDataSource.open();
+
+		setProfileFromRestrictions();
+
 		/* use a separate thread as main thread for charon */
 		mConnectionHandler = new Thread(this);
 		/* the thread is started when the service is bound */
@@ -232,6 +238,12 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			unbindService(mServiceConnection);
 		}
 		mDataSource.close();
+	}
+
+	private void setProfileFromRestrictions() {
+		RestrictionsVpnProfileManager restrictionsVpnProfileManager =
+			new RestrictionsVpnProfileManager(getApplicationContext());
+		restrictionsVpnProfileManager.updateProfile();
 	}
 
 	/**
@@ -358,13 +370,13 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 				mIsDisconnecting = true;
 				SimpleFetcher.disable();
 				deinitializeCharon();
-				Log.i(TAG, "charon stopped");
 				mCurrentProfile = null;
 				if (mNextProfile == null)
 				{	/* only do this if we are not connecting to another profile */
 					removeNotification();
 					mBuilderAdapter.closeBlocking();
 				}
+				Log.i(TAG, "charon stopped");
 			}
 		}
 	}
@@ -537,6 +549,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			if (mService != null)
 			{
 				mService.startConnection(profile);
+				Log.i(TAG, "startConnection " + profile.getName());
 			}
 		}
 	}
@@ -698,6 +711,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 */
 	private byte[][] getTrustedCertificates()
 	{
+		Log.i(TAG, "JNI :: getTrustedCertificates");
 		ArrayList<byte[]> certs = new ArrayList<byte[]>();
 		TrustedCertificateManager certman = TrustedCertificateManager.getInstance().load();
 		try
@@ -742,6 +756,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 */
 	private byte[][] getUserCertificate() throws KeyChainException, InterruptedException, CertificateEncodingException
 	{
+		Log.i(TAG, "JNI :: getUserCertificate");
 		ArrayList<byte[]> encodings = new ArrayList<byte[]>();
 		X509Certificate[] chain = KeyChain.getCertificateChain(getApplicationContext(), mCurrentUserCertificateAlias);
 		if (chain == null || chain.length == 0)

@@ -25,15 +25,21 @@ import org.strongswan.android.security.LocalCertificateKeyStoreProvider;
 import org.strongswan.android.ui.MainActivity;
 
 import android.app.Application;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.core.os.HandlerCompat;
 
 public class StrongSwanApplication extends Application
 {
+
+	private static final String TAG = StrongSwanApplication.class.getSimpleName();
 	private static Context mContext;
 	private final ExecutorService mExecutorService = Executors.newFixedThreadPool(4);
 	private final Handler mMainHandler = HandlerCompat.createAsync(Looper.getMainLooper());
@@ -47,6 +53,7 @@ public class StrongSwanApplication extends Application
 	{
 		super.onCreate();
 		StrongSwanApplication.mContext = getApplicationContext();
+		registerReceiver();
 	}
 
 	/**
@@ -99,4 +106,13 @@ public class StrongSwanApplication extends Application
 		}
 		System.loadLibrary("androidbridge");
 	}
+
+	private void registerReceiver() {
+		BroadcastReceiver restrictionsReceiver = new RestrictionsReceiver();
+		IntentFilter restrictionsFilter =
+			new IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED);
+		registerReceiver(restrictionsReceiver, restrictionsFilter);
+		Log.i(TAG, "registerReceiver");
+	}
+
 }
