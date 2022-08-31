@@ -317,30 +317,30 @@ public class VpnStateService extends Service
 	 */
 	public void reconnect()
 	{
-		if (mProfile == null)
-		{
-			return;
-		}
-		if (mProfile.getVpnType().has(VpnType.VpnTypeFeature.USER_PASS))
-		{
-			if (mProfile.getPassword() == null ||
-				mError == ErrorState.AUTH_FAILED)
-			{	/* show a dialog if we either don't have the password or if it might be the wrong
-				 * one (which is or isn't stored with the profile, let the activity decide)  */
-				Intent intent = new Intent(this, VpnProfileControlActivity.class);
-				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				intent.setAction(VpnProfileControlActivity.START_PROFILE);
-				intent.putExtra(VpnProfileControlActivity.EXTRA_VPN_PROFILE_ID, mProfile.getUUID().toString());
-				startActivity(intent);
-				/* reset the retry timer immediately in case the user needs more time to enter the password */
-				notifyListeners(() -> {
-					resetRetryTimer();
-					return true;
-				});
-				return;
-			}
-		}
-		connect(null, true);
+//		if (mProfile == null)
+//		{
+//			return;
+//		}
+//		if (mProfile.getVpnType().has(VpnType.VpnTypeFeature.USER_PASS))
+//		{
+//			if (mProfile.getPassword() == null ||
+//				mError == ErrorState.AUTH_FAILED)
+//			{	/* show a dialog if we either don't have the password or if it might be the wrong
+//				 * one (which is or isn't stored with the profile, let the activity decide)  */
+//				Intent intent = new Intent(this, VpnProfileControlActivity.class);
+//				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//				intent.setAction(VpnProfileControlActivity.START_PROFILE);
+//				intent.putExtra(VpnProfileControlActivity.EXTRA_VPN_PROFILE_ID, mProfile.getUUID().toString());
+//				startActivity(intent);
+//				/* reset the retry timer immediately in case the user needs more time to enter the password */
+//				notifyListeners(() -> {
+//					resetRetryTimer();
+//					return true;
+//				});
+//				return;
+//			}
+//		}
+//		connect(null, true);
 	}
 
 	/**
