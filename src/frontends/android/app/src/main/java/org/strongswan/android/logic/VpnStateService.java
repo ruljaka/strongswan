@@ -30,10 +30,8 @@ import android.os.SystemClock;
 import org.strongswan.android.R;
 import org.strongswan.android.data.VpnProfile;
 import org.strongswan.android.data.VpnProfileDataSource;
-import org.strongswan.android.data.VpnType;
 import org.strongswan.android.logic.imc.ImcState;
 import org.strongswan.android.logic.imc.RemediationInstruction;
-import org.strongswan.android.ui.VpnProfileControlActivity;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
