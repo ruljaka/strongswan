@@ -17,7 +17,7 @@ class RestrictionsReceiver : BroadcastReceiver() {
 		val newProfile = restrictionsVpnProfileManager.updateProfile()
 		val serviceIntent = Intent(context, CharonVpnService::class.java)
 		serviceIntent.action = CharonVpnService.VPN_SERVICE_ACTION
-		context.startService(serviceIntent)
+		context.startForegroundService(serviceIntent)
 		Log.i(TAG, "profile updated to ${newProfile?.name}")
 	}
 }

@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "org.strongswan.android"
-        minSdkVersion 23
+        minSdkVersion 26
         targetSdkVersion 32
         versionCode 75
         versionName "2.3.3"

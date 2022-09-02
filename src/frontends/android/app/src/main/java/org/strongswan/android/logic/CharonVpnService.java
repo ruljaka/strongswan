@@ -257,6 +257,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	{
 		synchronized (this)
 		{
+			Log.i(TAG, "startConnection:: " + (profile != null? profile.getName() : "null"));
 			this.mNextProfile = profile;
 			mProfileUpdated = true;
 			notifyAll();
@@ -474,7 +475,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 				Intent intent = new Intent(getApplicationContext(), CharonVpnService.class);
 				intent.setAction(CharonVpnService.VPN_SERVICE_ACTION);
 				PendingIntent pending = PendingIntent.getService(
-					getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+					getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(R.drawable.ic_notification_connecting, getString(R.string.retry), pending);
 				add_action = true;
 			}
@@ -510,7 +511,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 				Intent serviceIntent = new Intent(getApplicationContext(), CharonVpnService.class);
 				serviceIntent.setAction(CharonVpnService.STOP_SERVICE);
 				PendingIntent pending = PendingIntent.getService(
-					getApplicationContext(), 0, serviceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+					getApplicationContext(), 0, serviceIntent, PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(R.drawable.ic_notification_disconnect, getString(R.string.disconnect), pending);
 			}
 			if (error == ErrorState.NO_ERROR)
@@ -549,7 +550,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			if (mService != null)
 			{
 				mService.startConnection(profile);
-				Log.i(TAG, "startConnection " + profile.getName());
 			}
 		}
 	}
@@ -711,7 +711,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 */
 	private byte[][] getTrustedCertificates()
 	{
-		Log.i(TAG, "JNI :: getTrustedCertificates");
+		Log.i(TAG, "JNI :: getTrustedCertificates :: alias ->  " + this.mCurrentCertificateAlias);
 		ArrayList<byte[]> certs = new ArrayList<byte[]>();
 		TrustedCertificateManager certman = TrustedCertificateManager.getInstance().load();
 		try
@@ -756,7 +756,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 */
 	private byte[][] getUserCertificate() throws KeyChainException, InterruptedException, CertificateEncodingException
 	{
-		Log.i(TAG, "JNI :: getUserCertificate");
+		Log.i(TAG, "JNI :: getUserCertificate :: alias ->  " + mCurrentUserCertificateAlias);
 		ArrayList<byte[]> encodings = new ArrayList<byte[]>();
 		X509Certificate[] chain = KeyChain.getCertificateChain(getApplicationContext(), mCurrentUserCertificateAlias);
 		if (chain == null || chain.length == 0)
