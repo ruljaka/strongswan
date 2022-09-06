@@ -26,6 +26,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 
 import org.strongswan.android.R;
 import org.strongswan.android.data.VpnProfile;
@@ -504,6 +505,7 @@ public class VpnStateService extends Service
 		@Override
 		public void handleMessage(Message msg)
 		{
+			Log.i("VpnStateService", "VPN connect mRetryIn " + (mService.get().mRetryIn/1000));
 			/* handle retry countdown */
 			if (mService.get().mRetryTimeout <= 0)
 			{
