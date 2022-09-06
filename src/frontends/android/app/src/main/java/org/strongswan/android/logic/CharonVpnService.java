@@ -99,7 +99,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	private volatile boolean mTerminate;
 	private volatile boolean mIsDisconnecting;
 	private volatile boolean mShowNotification;
-	private BuilderAdapter mBuilderAdapter = new BuilderAdapter();
+	private final BuilderAdapter mBuilderAdapter = new BuilderAdapter();
 	private Handler mHandler;
 	private VpnStateService mService;
 	private final Object mServiceLock = new Object();
@@ -144,14 +144,13 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 		if (intent != null)
 		{
 			VpnProfile profile = getProfileFromDB();
-			boolean retry = false;
-			Log.i(TAG, "ACTION " +intent.getAction());
+			Log.i(TAG, "ACTION " + intent.getAction());
 
 			if (DISCONNECT_ACTION.equals(intent.getAction())) {
 				mService.disconnect();
 				profile = null;
 			}
-			if (profile != null && !retry)
+			if (profile != null)
 			{	/* delete the log file if this is not an automatic retry */
 				deleteFile(LOG_FILE);
 			}
@@ -172,7 +171,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 		mDataSource = new VpnProfileDataSource(this);
 		mDataSource.open();
 
-		setProfileFromRestrictions();
+		saveProfileToDBFromRestrictions();
 
 		/* use a separate thread as main thread for charon */
 		mConnectionHandler = new Thread(this);
@@ -214,14 +213,10 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	private VpnProfile getProfileFromDB(){
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 		String uuid = pref.getString(Constants.PREF_DEFAULT_VPN_PROFILE, null);
-		if (uuid == null || uuid.equals(Constants.PREF_DEFAULT_VPN_PROFILE_MRU))
-		{
-			uuid = pref.getString(Constants.PREF_MRU_VPN_PROFILE, null);
-		}
 		return mDataSource.getVpnProfile(uuid);
 	}
 
-	private void setProfileFromRestrictions() {
+	private void saveProfileToDBFromRestrictions() {
 		RestrictionsVpnProfileManager restrictionsVpnProfileManager =
 			new RestrictionsVpnProfileManager(getApplicationContext());
 		restrictionsVpnProfileManager.updateProfile();
@@ -340,7 +335,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	{
 		synchronized (this)
 		{
-			if (mNextProfile != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			if (mNextProfile != null)
 			{
 				mBuilderAdapter.setProfile(mNextProfile);
 				mBuilderAdapter.establishBlocking();
@@ -401,17 +396,14 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 */
 	private void createNotificationChannel()
 	{
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-		{
-			NotificationChannel channel;
-			channel = new NotificationChannel(NOTIFICATION_CHANNEL, getString(R.string.permanent_notification_name),
-											  NotificationManager.IMPORTANCE_LOW);
-			channel.setDescription(getString(R.string.permanent_notification_description));
-			channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
-			channel.setShowBadge(false);
-			NotificationManager notificationManager = getSystemService(NotificationManager.class);
-			notificationManager.createNotificationChannel(channel);
-		}
+		NotificationChannel channel;
+		channel = new NotificationChannel(NOTIFICATION_CHANNEL, getString(R.string.permanent_notification_name),
+										  NotificationManager.IMPORTANCE_LOW);
+		channel.setDescription(getString(R.string.permanent_notification_description));
+		channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+		channel.setShowBadge(false);
+		NotificationManager notificationManager = getSystemService(NotificationManager.class);
+		notificationManager.createNotificationChannel(channel);
 	}
 
 
@@ -723,9 +715,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 * to call methods on KeyChain directly.
 	 *
 	 * @return list containing the certificates (first element is the user certificate)
-	 * @throws InterruptedException
-	 * @throws KeyChainException
-	 * @throws CertificateEncodingException
 	 */
 	private byte[][] getUserCertificate() throws KeyChainException, InterruptedException, CertificateEncodingException
 	{
@@ -750,8 +739,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	 * to call methods on KeyChain directly.
 	 *
 	 * @return the private key
-	 * @throws InterruptedException
-	 * @throws KeyChainException
 	 */
 	private PrivateKey getUserKey() throws KeyChainException, InterruptedException
 	{
@@ -912,7 +899,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			return fd != null ? fd.detachFd() : -1;
 		}
 
-		@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 		public synchronized void establishBlocking()
 		{
 			/* just choose some arbitrary values to block all traffic (except for what's configured in the profile) */
