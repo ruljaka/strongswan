@@ -32,7 +32,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.VpnService;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
@@ -83,7 +82,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	private static final String TAG = CharonVpnService.class.getSimpleName();
 	public static final String VPN_SERVICE_ACTION = "android.net.VpnService";
 	public static final String DISCONNECT_ACTION = "org.strongswan.android.CharonVpnService.DISCONNECT";
-	private static final String STOP_SERVICE = "org.strongswan.android.CharonVpnService.STOP_SERVICE";
 	private static final String NOTIFICATION_CHANNEL = "org.strongswan.android.CharonVpnService.VPN_STATE_NOTIFICATION";
 	public static final String LOG_FILE = "charon.log";
 	public static final String KEY_IS_RETRY = "retry";
@@ -145,40 +143,13 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 	{
 		if (intent != null)
 		{
-			VpnProfile profile = null;
+			VpnProfile profile = getProfileFromDB();
 			boolean retry = false;
 			Log.i(TAG, "ACTION " +intent.getAction());
-			if (VPN_SERVICE_ACTION.equals(intent.getAction()))
-			{	/* triggered when Always-on VPN is activated */
-				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-				String uuid = pref.getString(Constants.PREF_DEFAULT_VPN_PROFILE, null);
-				if (uuid == null || uuid.equals(Constants.PREF_DEFAULT_VPN_PROFILE_MRU))
-				{
-					uuid = pref.getString(Constants.PREF_MRU_VPN_PROFILE, null);
-				}
-				profile = mDataSource.getVpnProfile(uuid);
-			}
-			else if (STOP_SERVICE.equals(intent.getAction())){
+
+			if (DISCONNECT_ACTION.equals(intent.getAction())) {
 				mService.disconnect();
-			}
-			else if (!DISCONNECT_ACTION.equals(intent.getAction()))
-			{
-				Bundle bundle = intent.getExtras();
-				if (bundle != null)
-				{
-					profile = mDataSource.getVpnProfile(bundle.getString(VpnProfileDataSource.KEY_UUID));
-					if (profile != null)
-					{
-						String password = bundle.getString(VpnProfileDataSource.KEY_PASSWORD);
-						profile.setPassword(password);
-
-						retry = bundle.getBoolean(CharonVpnService.KEY_IS_RETRY, false);
-
-						SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-						pref.edit().putString(Constants.PREF_MRU_VPN_PROFILE, profile.getUUID().toString())
-							.apply();
-					}
-				}
+				profile = null;
 			}
 			if (profile != null && !retry)
 			{	/* delete the log file if this is not an automatic retry */
@@ -238,6 +209,16 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			unbindService(mServiceConnection);
 		}
 		mDataSource.close();
+	}
+
+	private VpnProfile getProfileFromDB(){
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+		String uuid = pref.getString(Constants.PREF_DEFAULT_VPN_PROFILE, null);
+		if (uuid == null || uuid.equals(Constants.PREF_DEFAULT_VPN_PROFILE_MRU))
+		{
+			uuid = pref.getString(Constants.PREF_MRU_VPN_PROFILE, null);
+		}
+		return mDataSource.getVpnProfile(uuid);
 	}
 
 	private void setProfileFromRestrictions() {
@@ -471,7 +452,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 				}
 
 				Intent intent = new Intent(getApplicationContext(), CharonVpnService.class);
-				intent.setAction(CharonVpnService.VPN_SERVICE_ACTION);
 				PendingIntent pending = PendingIntent.getService(
 					getApplicationContext(), 0, intent, PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(R.drawable.ic_notification_connecting, getString(R.string.retry), pending);
@@ -507,7 +487,7 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			if (add_action)
 			{
 				Intent serviceIntent = new Intent(getApplicationContext(), CharonVpnService.class);
-				serviceIntent.setAction(CharonVpnService.STOP_SERVICE);
+				serviceIntent.setAction(CharonVpnService.DISCONNECT_ACTION);
 				PendingIntent pending = PendingIntent.getService(
 					getApplicationContext(), 0, serviceIntent, PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(R.drawable.ic_notification_disconnect, getString(R.string.disconnect), pending);
@@ -518,11 +498,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 			}
 			builder.setPublicVersion(buildNotification(true));
 		}
-
-//		Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-//		PendingIntent pending = PendingIntent.getActivity(getApplicationContext(), 0, intent,
-//														  PendingIntent.FLAG_UPDATE_CURRENT);
-//		builder.setContentIntent(pending);
 		return builder.build();
 	}
 
@@ -828,14 +803,6 @@ public class CharonVpnService extends VpnService implements Runnable, VpnStateSe
 		{
 			VpnService.Builder builder = new CharonVpnService.Builder();
 			builder.setSession(name);
-
-			/* even though the option displayed in the system dialog says "Configure"
-			 * we just use our main Activity */
-//			Context context = getApplicationContext();
-//			Intent intent = new Intent(context, MainActivity.class);
-//			PendingIntent pending = PendingIntent.getActivity(context, 0, intent,
-//															  PendingIntent.FLAG_UPDATE_CURRENT);
-//			builder.setConfigureIntent(pending);
 
 			/* mark all VPN connections as unmetered (default changed for Android 10) */
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
