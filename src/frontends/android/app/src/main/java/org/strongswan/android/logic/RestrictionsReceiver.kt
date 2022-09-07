@@ -14,9 +14,9 @@ class RestrictionsReceiver : BroadcastReceiver() {
 
 	override fun onReceive(context: Context, intent: Intent?) {
 		val restrictionsVpnProfileManager = RestrictionsVpnProfileManager(context)
-		val newProfile = restrictionsVpnProfileManager.updateProfile()
+		restrictionsVpnProfileManager.updateProfile()
 		val serviceIntent = Intent(context, CharonVpnService::class.java)
 		context.startForegroundService(serviceIntent)
-		Log.i(TAG, "profile updated from receiver")
+		Log.d(TAG, "profile updated from receiver")
 	}
 }

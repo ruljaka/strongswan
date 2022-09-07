@@ -22,25 +22,20 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
-import androidx.annotation.RequiresApi;
-
-public class Scheduler extends BroadcastReceiver
-{
+public class Scheduler extends BroadcastReceiver {
 	private final String EXECUTE_JOB = "org.strongswan.android.Scheduler.EXECUTE_JOB";
 	private final Context mContext;
 	private final AlarmManager mManager;
 	private final PriorityQueue<ScheduledJob> mJobs;
 
-	public Scheduler(Context context)
-	{
+	public Scheduler(Context context) {
 		mContext = context;
-		mManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+		mManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		mJobs = new PriorityQueue<>();
 
 		IntentFilter filter = new IntentFilter();
@@ -52,10 +47,8 @@ public class Scheduler extends BroadcastReceiver
 	 * Remove all pending jobs and unregister the receiver.
 	 * Called via JNI.
 	 */
-	public void Terminate()
-	{
-		synchronized (this)
-		{
+	public void Terminate() {
+		synchronized (this) {
 			mJobs.clear();
 		}
 		mManager.cancel(createIntent());
@@ -67,8 +60,7 @@ public class Scheduler extends BroadcastReceiver
 	 *
 	 * @return random ID for a new job
 	 */
-	public String allocateId()
-	{
+	public String allocateId() {
 		return UUID.randomUUID().toString();
 	}
 
@@ -77,8 +69,7 @@ public class Scheduler extends BroadcastReceiver
 	 *
 	 * @return pending intent
 	 */
-	private PendingIntent createIntent()
-	{
+	private PendingIntent createIntent() {
 		/* using component/class doesn't work with dynamic broadcast receivers */
 		Intent intent = new Intent(EXECUTE_JOB);
 		intent.setPackage(mContext.getPackageName());
@@ -92,50 +83,39 @@ public class Scheduler extends BroadcastReceiver
 	 * @param id job ID
 	 * @param ms delta in milliseconds when the job should be executed
 	 */
-	@RequiresApi(api = Build.VERSION_CODES.M)
-	public void scheduleJob(String id, long ms)
-	{
-		synchronized (this)
-		{
+	public void scheduleJob(String id, long ms) {
+		synchronized (this) {
 			ScheduledJob job = new ScheduledJob(id, System.currentTimeMillis() + ms);
 			mJobs.add(job);
 
-			if (job == mJobs.peek())
-			{	/* update the alarm if the job has to be executed before all others */
+			if (job == mJobs.peek()) {    /* update the alarm if the job has to be executed before all others */
 				PendingIntent pending = createIntent();
 				mManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, job.Time, pending);
 			}
 		}
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.M)
 	@Override
-	public void onReceive(Context context, Intent intent)
-	{
+	public void onReceive(Context context, Intent intent) {
 		ArrayList<ScheduledJob> jobs = new ArrayList<>();
 		long now = System.currentTimeMillis();
 
-		synchronized (this)
-		{
+		synchronized (this) {
 			ScheduledJob job = mJobs.peek();
-			while (job != null)
-			{
-				if (job.Time > now)
-				{
+			while (job != null) {
+				if (job.Time > now) {
 					break;
 				}
 				jobs.add(mJobs.remove());
 				job = mJobs.peek();
 			}
-			if (job != null)
-			{
+			if (job != null) {
 				PendingIntent pending = createIntent();
 				mManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, job.Time, pending);
 			}
 		}
 
-		for (ScheduledJob job : jobs)
-		{
+		for (ScheduledJob job : jobs) {
 			executeJob(job.Id);
 		}
 	}
@@ -150,20 +130,17 @@ public class Scheduler extends BroadcastReceiver
 	/**
 	 * Keep track of scheduled jobs.
 	 */
-	private static class ScheduledJob implements Comparable<ScheduledJob>
-	{
+	private static class ScheduledJob implements Comparable<ScheduledJob> {
 		String Id;
 		long Time;
 
-		ScheduledJob(String id, long time)
-		{
+		ScheduledJob(String id, long time) {
 			Id = id;
 			Time = time;
 		}
 
 		@Override
-		public int compareTo(ScheduledJob o)
-		{
+		public int compareTo(ScheduledJob o) {
 			return Long.compare(Time, o.Time);
 		}
 	}

@@ -16,6 +16,8 @@
 
 package org.strongswan.android.logic;
 
+import androidx.annotation.Keep;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,24 +35,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import androidx.annotation.Keep;
-
 @Keep
-public class SimpleFetcher
-{
-	private static ExecutorService mExecutor = Executors.newCachedThreadPool();
-	private static Object mLock = new Object();
-	private static ArrayList<Future> mFutures = new ArrayList<>();
+public class SimpleFetcher {
+	private static final ExecutorService mExecutor = Executors.newCachedThreadPool();
+	private static final Object mLock = new Object();
+	private static final ArrayList<Future> mFutures = new ArrayList<>();
 	private static boolean mDisabled;
 
-	public static byte[] fetch(String uri, byte[] data, String contentType)
-	{
+	public static byte[] fetch(String uri, byte[] data, String contentType) {
 		Future<byte[]> future;
 
-		synchronized (mLock)
-		{
-			if (mDisabled)
-			{
+		synchronized (mLock) {
+			if (mDisabled) {
 				return null;
 			}
 			future = mExecutor.submit(() -> {
@@ -58,14 +54,11 @@ public class SimpleFetcher
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setConnectTimeout(10000);
 				conn.setReadTimeout(10000);
-				try
-				{
-					if (contentType != null)
-					{
+				try {
+					if (contentType != null) {
 						conn.setRequestProperty("Content-Type", contentType);
 					}
-					if (data != null)
-					{
+					if (data != null) {
 						conn.setDoOutput(true);
 						conn.setFixedLengthStreamingMode(data.length);
 						OutputStream out = new BufferedOutputStream(conn.getOutputStream());
@@ -73,13 +66,9 @@ public class SimpleFetcher
 						out.close();
 					}
 					return streamToArray(conn.getInputStream());
-				}
-				catch (SocketTimeoutException e)
-				{
+				} catch (SocketTimeoutException e) {
 					return null;
-				}
-				finally
-				{
+				} finally {
 					conn.disconnect();
 				}
 			});
@@ -87,19 +76,13 @@ public class SimpleFetcher
 			mFutures.add(future);
 		}
 
-		try
-		{
+		try {
 			/* this enforces a timeout as the ones set on HttpURLConnection might not work reliably */
 			return future.get(10000, TimeUnit.MILLISECONDS);
-		}
-		catch (InterruptedException|ExecutionException|TimeoutException|CancellationException e)
-		{
+		} catch (InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
 			return null;
-		}
-		finally
-		{
-			synchronized (mLock)
-			{
+		} finally {
+			synchronized (mLock) {
 				mFutures.remove(future);
 			}
 		}
@@ -108,57 +91,45 @@ public class SimpleFetcher
 	/**
 	 * Enable fetching after it has been disabled.
 	 */
-	public static void enable()
-	{
-		synchronized (mLock)
-		{
+	public static void enable() {
+		synchronized (mLock) {
 			mDisabled = false;
 		}
 	}
 
 	/**
 	 * Disable the fetcher and abort any future requests.
-	 *
+	 * <p>
 	 * The native thread is not cancelable as it is working on an IKE_SA (canceling the methods of
 	 * HttpURLConnection is not reliably possible anyway), so to abort while fetching we cancel the
 	 * Future (causing a return from fetch() immediately) and let the executor thread continue its
 	 * thing in the background.
-	 *
+	 * <p>
 	 * Also prevents future fetches until enabled again (e.g. if we aborted OCSP but would then
 	 * block in the subsequent fetch for a CRL).
 	 */
-	public static void disable()
-	{
-		synchronized (mLock)
-		{
+	public static void disable() {
+		synchronized (mLock) {
 			mDisabled = true;
-			for (Future future : mFutures)
-			{
+			for (Future future : mFutures) {
 				future.cancel(true);
 			}
 		}
 	}
 
-	private static byte[] streamToArray(InputStream in) throws IOException
-	{
+	private static byte[] streamToArray(InputStream in) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] buf = new byte[1024];
 		int len;
 
-		try
-		{
-			while ((len = in.read(buf)) != -1)
-			{
+		try {
+			while ((len = in.read(buf)) != -1) {
 				out.write(buf, 0, len);
 			}
 			return out.toByteArray();
-		}
-		catch (IOException e)
-		{
+		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		finally
-		{
+		} finally {
 			in.close();
 		}
 		return null;

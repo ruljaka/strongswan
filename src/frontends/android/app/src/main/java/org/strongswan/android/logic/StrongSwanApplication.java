@@ -16,79 +16,45 @@
 
 package org.strongswan.android.logic;
 
-import java.security.Security;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.strongswan.android.security.LocalCertificateKeyStoreProvider;
-
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
-import androidx.core.os.HandlerCompat;
+import org.strongswan.android.security.LocalCertificateKeyStoreProvider;
 
-public class StrongSwanApplication extends Application
-{
+import java.security.Security;
+
+public class StrongSwanApplication extends Application {
 
 	private static final String TAG = StrongSwanApplication.class.getSimpleName();
-	private static Context mContext;
-	private final ExecutorService mExecutorService = Executors.newFixedThreadPool(4);
-	private final Handler mMainHandler = HandlerCompat.createAsync(Looper.getMainLooper());
-
-	static {
-		Security.addProvider(new LocalCertificateKeyStoreProvider());
-	}
-
-	@Override
-	public void onCreate()
-	{
-		super.onCreate();
-		StrongSwanApplication.mContext = getApplicationContext();
-		registerReceiver();
-	}
-
-	/**
-	 * Returns the current application context
-	 * @return context
-	 */
-	public static Context getContext()
-	{
-		return StrongSwanApplication.mContext;
-	}
-
-	/**
-	 * Returns a thread pool to run tasks in separate threads
-	 * @return thread pool
-	 */
-	public Executor getExecutor()
-	{
-		return mExecutorService;
-	}
-
-	/**
-	 * Returns a handler to execute stuff by the main thread.
-	 * @return handler
-	 */
-	public Handler getHandler()
-	{
-		return mMainHandler;
-	}
+	private static Application application;
 
 	/*
 	 * The libraries are extracted to /data/data/org.strongswan.android/...
 	 * during installation.  On newer releases most are loaded in JNI_OnLoad.
 	 */
-	static
-	{
+	static {
 		System.loadLibrary("androidbridge");
+		Security.addProvider(new LocalCertificateKeyStoreProvider());
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		application = this;
+		registerReceiver();
+	}
+
+	/**
+	 * Returns the current application context
+	 *
+	 * @return context
+	 */
+	public static Context getContext() {
+		return StrongSwanApplication.application.getApplicationContext();
 	}
 
 	private void registerReceiver() {
@@ -96,7 +62,7 @@ public class StrongSwanApplication extends Application
 		IntentFilter restrictionsFilter =
 			new IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED);
 		registerReceiver(restrictionsReceiver, restrictionsFilter);
-		Log.i(TAG, "registerReceiver");
+		Log.d(TAG, "registerReceiver");
 	}
 
 }
