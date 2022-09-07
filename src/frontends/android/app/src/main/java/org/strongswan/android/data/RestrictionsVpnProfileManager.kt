@@ -66,7 +66,7 @@ class RestrictionsVpnProfileManager(context: Context) {
 				Constants.PREF_DEFAULT_VPN_PROFILE,
 				newProfile.uuid.toString()
 			).apply()
-			Log.i(TAG, "DEFAULT_VPN_PROFILE updated")
+			Log.i(TAG, "DEFAULT_VPN_PROFILE updated to ${newProfile.name}")
 			return true
 		} ?: return false
 	}

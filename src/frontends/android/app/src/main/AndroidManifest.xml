@@ -38,6 +38,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/ApplicationTheme"
         tools:targetApi="s"
+        android:fullBackupContent = "false"
         android:dataExtractionRules="@xml/data_extraction_rules">
 
         <meta-data

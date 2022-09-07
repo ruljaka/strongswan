@@ -80,11 +80,9 @@ import androidx.preference.PreferenceManager;
 public class CharonVpnService extends VpnService implements Runnable, VpnStateService.VpnStateListener
 {
 	private static final String TAG = CharonVpnService.class.getSimpleName();
-	public static final String VPN_SERVICE_ACTION = "android.net.VpnService";
 	public static final String DISCONNECT_ACTION = "org.strongswan.android.CharonVpnService.DISCONNECT";
 	private static final String NOTIFICATION_CHANNEL = "org.strongswan.android.CharonVpnService.VPN_STATE_NOTIFICATION";
 	public static final String LOG_FILE = "charon.log";
-	public static final String KEY_IS_RETRY = "retry";
 	public static final int VPN_STATE_NOTIFICATION_ID = 1;
 
 	private String mLogFile;
