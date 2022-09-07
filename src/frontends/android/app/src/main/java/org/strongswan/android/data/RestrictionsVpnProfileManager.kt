@@ -50,10 +50,13 @@ class RestrictionsVpnProfileManager(context: Context) {
 		val appRestrictions = restrictionsManager.applicationRestrictions
 		appRestrictions?.let {
 			val vpnProfile = VpnProfile().apply {
-				name = it.getString("vpn_name")
-				gateway = it.getString("vpn_server")
-				userCertificateAlias = it.getString("vpn_alias")
-				vpnType = VpnType.IKEV2_CERT
+				val vpnProfile = VpnProfile().apply {
+					name = it.getString("vpn_name")
+					gateway = it.getString("vpn_server")
+					username = it.getString("vpn_login")
+					password = it.getString("vpn_password")
+					vpnType = VpnType.IKEV2_EAP
+				}
 			}
 			return vpnProfile
 		} ?: return null

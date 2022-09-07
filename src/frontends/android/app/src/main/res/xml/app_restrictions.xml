@@ -8,7 +8,10 @@
         android:key="vpn_server"
         android:restrictionType="string" />
     <restriction
-        android:key="vpn_alias"
+        android:key="vpn_login"
+        android:restrictionType="string" />
+    <restriction
+        android:key="vpn_password"
         android:restrictionType="string" />
 
 </restrictions>
